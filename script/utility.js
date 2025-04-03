@@ -1,32 +1,5 @@
 const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 
-export class AudioNote {
-	audioFile = "";
-	word = "";
-	slug = "";
-
-	constructor({ audioFile, word, slug }) {
-		this.slug = slug;
-		this.audioFile = audioFile;
-		this.word = word;
-	}
-
-	generateCards() {
-		return [
-			new Card({
-				front: { type: "audio", value: this.audioFile },
-				back: { type: "text", value: this.word },
-				slug: `${this.word} (audio)`,
-			}),
-			new Card({
-				front: { type: "text", value: this.word },
-				back: { type: "audio", value: this.audioFile },
-				slug: `${this.word} (text)`,
-			}),
-		];
-	}
-}
-
 export class Card {
 	dailyForgetting = 0.1; // how much is forgotten each day?
 
@@ -136,55 +109,40 @@ export class Result {
 
 export const loadCards = () => {
 	const loadedCards = localStorage.getItem("cards");
-	const weekWords = {
-		1: [
-			"a",
-			"and",
-			"he",
-			"in",
-			"is",
-			"it",
-			"of",
-			"that",
-			"the",
-			"to",
-			"was",
-			"you",
-		],
-		2: [
-			"I",
-			"as",
-			"have",
-			"at",
-			"be",
-			"on",
-			"with",
-			"his",
-			"for",
-			"this",
-			"are",
-			"they",
-		],
-	};
-	const defaultNotes = Object.entries(weekWords).reduce(
-		(acc, [week, words]) => {
+	const multiplicationTable = new Array(10)
+		.fill(0)
+		.map((_, i) => i + 1)
+		.map((i) => {
+			const seconds = new Array(10 - i + 1).fill(0).map((_, ii) => {
+				return 10 - ii;
+			});
+			return [
+				...seconds.map((ii) => {
+					return [i, ii];
+				}),
+				...seconds.map((ii) => [ii, i]),
+			];
+		});
+	const WEEK_NUMBER = 1;
+	const defaultNotes = multiplicationTable
+		.slice(0, WEEK_NUMBER)
+		.reduce((acc, currentRow) => {
 			return [
 				...acc,
-				...words.map((word) => {
-					return new AudioNote({
-						word,
-						slug: word,
-						audioFile: `./media/week${week}/${word}.m4a`,
+				...currentRow.map(([first, second]) => {
+					return new Card({
+						front: { type: "text", value: `${first} x ${second}` },
+						back: { type: "text", value: `${first * second}` },
+						slug: `${first}x${second}`,
 					});
 				}),
 			];
-		},
-		[]
-	);
+		}, []);
 	console.log({ defaultNotes });
-	const defaultCards = defaultNotes.reduce((cards, note) => {
-		return [...cards, ...note.generateCards()];
-	}, []);
+	// const defaultCards = defaultNotes.reduce((cards, note) => {
+	// 	return [...cards, ...note.generateCards()];
+	// }, []);
+	const defaultCards = defaultNotes;
 	let toReturn = [];
 	try {
 		const parsedLoadedCards = loadedCards
@@ -195,10 +153,10 @@ export const loadCards = () => {
 							results: data.results
 								? data.results.map(
 										(result) => new Result(result)
-								  )
+									)
 								: [],
 						})
-			  )
+				)
 			: [];
 		// now merge these with any default cards
 		toReturn = [
