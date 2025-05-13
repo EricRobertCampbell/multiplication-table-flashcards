@@ -123,7 +123,7 @@ export const loadCards = () => {
 				...seconds.map((ii) => [ii, i]),
 			];
 		});
-	const WEEK_NUMBER = 5;
+	const WEEK_NUMBER = 10;
 	const defaultNotes = multiplicationTable
 		.slice(0, WEEK_NUMBER)
 		.reduce((acc, currentRow) => {
